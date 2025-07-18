@@ -23,7 +23,9 @@ import static com.google.errorprone.BugPattern.SeverityLevel.WARNING;
 public class BadNamesChecker extends BugChecker implements
         BugChecker.IdentifierTreeMatcher,
         BugChecker.MethodInvocationTreeMatcher,
-        BugChecker.MethodTreeMatcher {
+        BugChecker.MethodTreeMatcher, 
+        BugChecker.IfTreeMatcher,
+        BugChecker.VariableTreeMatcher {
 
     @java.lang.Override
     public Description matchIdentifier(IdentifierTree identifierTree, VisitorState visitorState) {
@@ -31,6 +33,18 @@ public class BadNamesChecker extends BugChecker implements
         // or just declarations?
         Name identifier = identifierTree.getName();
         return checkName(identifierTree, identifier);
+    }
+
+    @Override
+    public Description matchIf(IfTree tree, VisitorState state)
+    {
+        if (tree.getElseStatement() == null)
+        {
+            return buildDescription(tree)
+                .setMessage("We found an if without an else")
+                .build();
+        }
+        return Description.NO_MATCH;
     }
 
     @Override
@@ -56,22 +70,90 @@ public class BadNamesChecker extends BugChecker implements
     public Description matchMethod(MethodTree methodTree, VisitorState visitorState) {
         // MethodTree represents the definition of a method. We want to check the name of this
         // method to see if it is acceptable.
+        Name methodName = methodTree.getName();
+        return checkName(methodTree, methodName);
+    }
 
-        // TODO: What needs to be done here to check the name of the method?
-
-        // TODO: Remove this, if needed. This is just here because we need to return a Description.
-        return Description.NO_MATCH;
+    @Override
+    public Description matchVariable(VariableTree variableTree, VisitorState visitorState) {
+        // VariableTree represents variable declarations (fields, local variables, parameters)
+        Name variableName = variableTree.getName();
+        return checkName(variableTree, variableName);
     }
 
     private Description checkName(Tree tree, Name identifier) {
-        // TODO: What other names are a problem? Add checks for them here...
-        if (identifier.contentEquals("foo")) {
+        String name = identifier.toString();
+        
+        // Check for specific bad names (existing functionality)
+        if (name.equals("foo") || name.equals("bar") || name.equals("baz") || 
+            name.equals("temp") || name.equals("tmp") || name.equals("data") ||
+            name.equals("obj") || name.equals("thing") || name.equals("stuff")) {
             return buildDescription(tree)
-                    .setMessage(String.format("%s is a bad identifier name", identifier))
+                    .setMessage(String.format("'%s' is a generic/meaningless identifier name", name))
+                    .build();
+        }
+        
+        // pattern rules
+        
+        // too short, less than two chars
+        if (name.length() < 2 && !isAcceptableShortName(name)) {
+            return buildDescription(tree)
+                    .setMessage(String.format("Identifier '%s' is too short and not descriptive", name))
+                    .build();
+        }
+        
+        // too long, more than 50 characters
+        if (name.length() > 50) {
+            return buildDescription(tree)
+                    .setMessage(String.format("Identifier '%s' is too long (>50 characters)", name))
+                    .build();
+        }
+        
+        // only numbers
+        if (name.matches("^\\d+$")) {
+            return buildDescription(tree)
+                    .setMessage(String.format("Identifier '%s' consists only of numbers", name))
+                    .build();
+        }
+        
+        // excessive underscores or repeated characters
+        if (name.contains("__") || name.matches(".*([a-zA-Z])\\1{3,}.*")) {
+            return buildDescription(tree)
+                    .setMessage(String.format("Identifier '%s' contains excessive repeated characters", name))
+                    .build();
+        }
+
+        // starts or ends with underscores 
+        if ((name.startsWith("_") || name.endsWith("_"))) {
+            return buildDescription(tree)
+                    .setMessage(String.format("Identifier '%s' should not start or end with underscores", name))
+                    .build();
+        }
+        
+        // all uppercase (not constant)
+        if (name.matches("^[A-Z_]+$") && !isConstant(tree)) {
+            return buildDescription(tree)
+                    .setMessage(String.format("Identifier '%s' should not be all uppercase unless it's a constant", name))
                     .build();
         }
 
         return Description.NO_MATCH;
+    }
+
+    private boolean isAcceptableShortName(String name) 
+    {
+        // single-letter names that are acceptable in some cases
+        return name.matches("^[ijklmnpqr]$");  // Common loop counters
+    }
+    
+    private boolean isConstant(Tree tree) {
+        // check if the variable is a constant (static final)
+        if (tree instanceof VariableTree) {
+            VariableTree varTree = (VariableTree) tree;
+            String modifiers = varTree.getModifiers().toString();
+            return modifiers.contains("static") && modifiers.contains("final");
+        }
+        return false;
     }
 
     private static final IllegalStateException malformedMethodInvocationTree(MethodInvocationTree tree) {
