@@ -8,10 +8,6 @@ import com.google.errorprone.matchers.Description;
 import com.sun.source.tree.*;
 import com.sun.source.util.TreeScanner;
 
-import java.util.*;
-
-import javax.lang.model.element.Name;
-
 import static com.google.errorprone.BugPattern.LinkType.CUSTOM;
 import static com.google.errorprone.BugPattern.SeverityLevel.WARNING;
 
