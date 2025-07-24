@@ -292,6 +292,20 @@ public class BadLocalVarChecker extends BugChecker implements
             return super.visitIdentifier(tree, unused);
         }
 
-        
+        @Override
+        public Void visitAssignment(AssignmentTree tree, Void unused)
+        {
+            // check if reassignment
+            ExpressionTree var = tree.getVariable();
+            if (var instanceof IdentifierTree)
+            {
+                String varName = ((IdentifierTree) var).getName().toString();
+                if (varName.equals(targetVarName))
+                {
+                    isReassigned = true;
+                }
+            }
+            return super.visitAssignment(tree, unused);
+        }
     }
 }
