@@ -219,6 +219,15 @@ public class BadLocalVarChecker extends BugChecker implements
         }
 
         // override methods
+        @Override 
+        public Void visitForLoop(ForLoopTree tree, Void unused)
+        {
+            boolean wasInLoop = inLoopBody;
+            inLoopBody = true;
+            Void result = super.visitForLoop(tree, unused);
+            inLoopBody = wasInLoop; // restore state
+            return result;
+        }
 
     }
 }
