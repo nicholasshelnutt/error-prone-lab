@@ -102,6 +102,72 @@ public class BadLocalVarChecker extends BugChecker implements
         private boolean isUsedInLoop = false;
         private boolean isImmediateReturn = false;
 
-        
+        public VarInfo analyzeVariable(String varName, BlockTree methodBody)
+        {
+            restAnalysisState();
+            this.targetVarName = varName;
+
+            // first; find declaration
+            findVariableDeclaration(methodBody);
+
+            if (targetVarDecl == null) 
+            {
+                return null; // variable not found
+            }
+
+            // second: usage patterns
+            analyzeUagePatterns(methodBody);
+
+            // third: immediate return pattern
+            checkImmediateReturn(methodBody);
+
+            // create & return var info
+            VarInfo info = new VarInfo(targetVarDecl);
+            setVariableInfoFields(info);
+            return info;
+        }
+
+        private void resetAnalysisState()
+        {
+            targetVarName = null;
+            targetVarDecl = null;
+            usageCount = 0;
+            isReassigned = false;
+            isUsedInLoop = false;
+            isImmediateReturn = false;
+            inVariableDeclaration = false;
+            inLoopBody = false;
+            inReturnStmt = false;
+        }
+
+        private void findVariableDeclaration(BlockTree methodBody)
+        {
+            for (StatementTree stmt : methodBody.getStatements()) 
+            {
+                if (stmt instanceof VariableTree) 
+                {
+                    VariableTree varTree = (VariableTree) stmt;
+                    if (varTree.getName().toString().equals(targetVarName))
+                    {
+                        targetVarDecl = varTree;
+                        break; // found decl
+                    }
+                }
+                    
+            }
+        }
+
+        private void analyzeUsagePatterns(BlockTree methodBody)
+        {
+            // reset traversal
+            inVariableDeclaration = false;
+            inLoopBody = false;
+            inReturnStmt = false;
+            usageCount = 0;
+            isReassigned = false;
+            isUsedInLoop = false;
+            
+            scan(methodBody, null);
+        }
     }
 }
