@@ -22,6 +22,13 @@ import static com.google.errorprone.BugPattern.SeverityLevel.WARNING;
 public class BadLocalVarChecker extends BugChecker implements 
     BugChecker.MethodTreeMatcher
 {
+    @Override
+    public Description matchMethod(MethodTree tree, VisitorState state)
+    {
+        
+    }
+
+
     // holds var info
     private static class VarInfo
     {
