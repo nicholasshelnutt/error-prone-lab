@@ -84,6 +84,16 @@ public class BadLocalVarChecker extends BugChecker implements
         {
             this.usedInLoop = usedInLoop;
         }
+    }
 
+    // checks if var name looks like a loop counter
+    private boolean isLoopCounter(String varName)
+    {
+        return varName.length() == 1 && "ijklmnpqr".contains(varName);
+    }
+
+    private static class MethodAnalyzer extends TreeScanner<Void, Void>
+    {
+        
     }
 }
