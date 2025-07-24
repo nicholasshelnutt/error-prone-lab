@@ -104,7 +104,7 @@ public class BadLocalVarChecker extends BugChecker implements
 
         public VarInfo analyzeVariable(String varName, BlockTree methodBody)
         {
-            restAnalysisState();
+            resetAnalysisState();
             this.targetVarName = varName;
 
             // first; find declaration
@@ -116,7 +116,7 @@ public class BadLocalVarChecker extends BugChecker implements
             }
 
             // second: usage patterns
-            analyzeUagePatterns(methodBody);
+            analyzeUsagePatterns(methodBody);
 
             // third: immediate return pattern
             checkImmediateReturn(methodBody);
@@ -135,7 +135,7 @@ public class BadLocalVarChecker extends BugChecker implements
             isReassigned = false;
             isUsedInLoop = false;
             isImmediateReturn = false;
-            inVariableDeclaration = false;
+            inVarDecl = false;
             inLoopBody = false;
             inReturnStmt = false;
         }
@@ -160,7 +160,7 @@ public class BadLocalVarChecker extends BugChecker implements
         private void analyzeUsagePatterns(BlockTree methodBody)
         {
             // reset traversal
-            inVariableDeclaration = false;
+            inVarDecl = false;
             inLoopBody = false;
             inReturnStmt = false;
             usageCount = 0;
@@ -194,5 +194,31 @@ public class BadLocalVarChecker extends BugChecker implements
                 prevStmt = stmt;
             }
         }
+
+        private void setVariableInfoFields(VarInfo info)
+        {
+            if (isImmediateReturn) 
+            {
+                info.setImmediatelyReturned(true);
+            }
+
+            if (isUsedInLoop) 
+            {
+                info.setUsedInLoop(true);
+            }
+
+            if (isReassigned) 
+            {
+                info.setReassign(true);
+            }
+
+            for (int i = 0; i < usageCount; i++)
+            {
+                info.incrementUsageCount();
+            }
+        }
+
+        // override methods
+
     }
 }
