@@ -269,5 +269,29 @@ public class BadLocalVarChecker extends BugChecker implements
             return result;
         }
 
+        @Override
+        public Void visitVariable(VariableTree tree, Void unused)
+        {
+            inVarDecl = true;
+            Void result = super.visitVariable(tree, unused);
+            inVarDecl = false;
+            return result;
+        }
+
+        @Override
+        public Void visitIdentifier(IdentifierTree tree, Void unused)
+        {
+            if (!inVarDecl && tree.getName().toString().equals(targetVarName)) 
+            {
+                usageCount++;
+                if (inLoopBody) 
+                {
+                    isUsedInLoop = true;
+                }
+            }
+            return super.visitIdentifier(tree, unused);
+        }
+
+        
     }
 }
