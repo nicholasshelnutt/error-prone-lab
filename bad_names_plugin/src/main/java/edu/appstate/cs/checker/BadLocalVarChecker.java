@@ -90,6 +90,18 @@ public class BadLocalVarChecker extends BugChecker implements
 
     private static class MethodAnalyzer extends TreeScanner<Void, Void>
     {
+        private boolean inVarDecl = false;
+        private boolean inLoopBody = false;
+        private boolean inReturnStmt = false;
+
+        // current var being checked
+        private String targetVarName = null;
+        private VariableTree targetVarDecl = null;
+        private int usageCount = 0;
+        private boolean isReassigned = false;
+        private boolean isUsedInLoop = false;
+        private boolean isImmediateReturn = false;
+
         
     }
 }
