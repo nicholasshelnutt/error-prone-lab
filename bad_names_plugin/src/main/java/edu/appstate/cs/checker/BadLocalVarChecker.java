@@ -169,5 +169,30 @@ public class BadLocalVarChecker extends BugChecker implements
             
             scan(methodBody, null);
         }
+
+        private void checkImmediateReturn(BlockTree methodBody)
+        {
+            // check for immediate return
+            StatementTree prevStmt = null;
+            for (StatementTree stmt : methodBody.getStatements())
+            {
+                if (prevStmt instanceof VariableTree && stmt instanceof ReturnTree)
+                {
+                    VariableTree varTree = (VariableTree) prevStmt;
+                    ReturnTree returnTree = (ReturnTree) stmt;
+
+                    if (varTree.getName().toString().equals(targetVarName) && returnTree.getExpression() instanceof IdentifierTree)
+                    {
+                        IdentifierTree returnedVar = (IdentifierTree) returnTree.getExpression();
+                        if (returnedVar.getName().toString().equals(targetVarName))
+                        {
+                            isImmediateReturn = true;
+                            break; // found immediate return
+                        }
+                    }
+                }
+                prevStmt = stmt;
+            }
+        }
     }
 }
