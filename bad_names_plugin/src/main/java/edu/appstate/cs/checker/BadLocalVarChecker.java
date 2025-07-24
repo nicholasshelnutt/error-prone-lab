@@ -25,7 +25,47 @@ public class BadLocalVarChecker extends BugChecker implements
     @Override
     public Description matchMethod(MethodTree tree, VisitorState state)
     {
-        
+        if (tree.getBody() == null) 
+        {
+            return Description.NO_MATCH; // no body to analyze
+        }
+
+        BlockTree methodBody = tree.getBody();
+        MethodAnalyzer analyzer = new MethodAnalyzer();
+
+        // find all local var decls in the method
+        for (StatementTree stmt : methodBody.getStatements())
+        {
+            if (stmt instanceof VariableTree)
+            {
+                VariableTree varTree = (VariableTree) stmt;
+                String varName = varTree.getName().toString();
+
+                // analyze each var
+                VarInfo varInfo = analyzer.analyzeVariable(varName, methodBody);
+
+                if (varInfo != null)
+                {
+                    // check for immediate return
+                    if (varInfo.isImmediatlyReturned())
+                    {
+                        return buildDescription(varInfo.getDtree())
+                                .setMessage(String.format("Variable '%s' is immediately returned and can be removed.", varName))
+                                .build();
+                    }
+
+                    // only flag single use if not in loop or reassigned
+                    if (varInfo.getUsageCount() == 1 && !varInfo.isReassigned() &&
+                        !varInfo.isUsedInLoop() && !isLoopCounter(varName))
+                    {
+                        return buildDescription(varInfo.getDtree())
+                                .setMessage(String.format("Variable '%s' is only used once and can be removed.", varName))
+                                .build();
+                    }
+                }
+            }
+        }
+        return Description.NO_MATCH; // no issues found
     }
 
 
